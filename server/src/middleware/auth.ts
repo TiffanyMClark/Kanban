@@ -4,30 +4,29 @@ import jwt from "jsonwebtoken";
 interface JwtPayload {
   username: string;
 }
-declare module "express-serve-static-core" {
-  interface Request {
-    user?: JwtPayload;
-  }
-}
+
 export const authenticateToken = (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
+  // TODO: verify the token exists and add the user data to the request object
+  const authHeader = req.headers.authorization;
 
-  if (!token) {
-    res.status(401).json({ message: "Access denied. No token provided." });
-    return;
+  if (authHeader) {
+    const token = authHeader.split(" ")[1];
+
+    const secretKey = process.env.JWT_SECRET_KEY || "";
+
+    jwt.verify(token, secretKey, (err, user) => {
+      if (err) {
+        return res.sendStatus(403); // Forbidden
+      }
+
+      req.user = user as JwtPayload;
+      return next();
+    });
+  } else {
+    res.sendStatus(401); // Unauthorized
   }
-  jwt.verify(token, process.env.JWT_SECRET as string, (err, decoded) => {
-    if (err || !decoded || typeof decoded === "string") {
-      res.status(403).json({ message: "Invalid or expired token." });
-      return;
-    }
-
-    req.user = decoded as JwtPayload;
-    next();
-  });
 };

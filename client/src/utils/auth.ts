@@ -54,3 +54,7 @@ class AuthService {
 }
 
 export default new AuthService();
+export { AuthService };
+export type { JwtPayload };
+export type { UserData };
+export { jwtDecode };
